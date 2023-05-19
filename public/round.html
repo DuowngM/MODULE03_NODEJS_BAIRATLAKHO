@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/game.css" />
+    <title>Document</title>
+    <style>
+      .container {
+        width: 80%;
+        margin: 0 auto;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      table td,
+      table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      table th {
+        background-color: #f2f2f2;
+        color: #000;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      button {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        font-size: 16px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #0062cc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <table>
+            <thead>
+              <tr id="name">
+                <th>#</th>
+                <th id="pl1">Name 1</th>
+                <th id="pl2">Name 2</th>
+                <th id="pl3">Name 3</th>
+                <th id="pl4">Name 4</th>
+              </tr>
+            </thead>
+            <tbody id="score-body">
+              <tr class="sum">
+                <td>Sum of scores</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+              </tr>
+              <tbody id="round-1">
+                  <tr >
+                  </tr>
+              </tbody>
+            </tbody>
+          </table>
+
+      <button class="btn">Add round</button>
+    </div>
+
+    <script>
+      let gameId = window.location.href.split("/")[4];
+      const addButton = document.querySelector(".btn");
+      const scoreTable = document.getElementById("score-body");
+      const inputFields = [];
+      let roundCount = 0;
+
+      addButton.addEventListener("click", function () {
+        roundCount++;
+        const newRow = scoreTable.insertRow(-1);
+        newRow.id = `round-${roundCount}`;
+        const roundCell = newRow.insertCell(0);
+        roundCell.textContent = `Round ${roundCount}`;
+
+        for (let i = 0; i < 4; i++) {
+          const scoreCell = newRow.insertCell(i + 1);
+          const input = document.createElement("input");
+          input.type = "number";
+          scoreCell.appendChild(input);
+          inputFields.unshift(input);
+        }
+
+        const scores = inputFields.map((field) => field.value);
+        console.log(scores);
+        fetch("http://127.0.0.1:8000/api/v1/round", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            scoreplayer1: scores[7],
+            scoreplayer2: scores[6],
+            scoreplayer3: scores[5],
+            scoreplayer4: scores[4],
+            gameId,
+          }),
+        });
+      });
+      let listPlayers;
+      fetch("http://127.0.0.1:8000/api/v1/player")
+        .then((res) => res.json())
+        .then((data) => {
+          listPlayers = data;
+          let findData = listPlayers.find((e) => e.gameId === +gameId);
+          document.getElementById("pl1").innerHTML = findData.player1;
+          document.getElementById("pl2").innerHTML = findData.player2;
+          document.getElementById("pl3").innerHTML = findData.player3;
+          document.getElementById("pl4").innerHTML = findData.player4;
+        })
+        .catch((err) => console.log(err));
+        fetch("http://127.0.0.1:8000/api/v1/round")
+        .then((res) => res.json())
+        .then((data) => {
+            const points = data.map((roundData, index) => `
+            <tr id="round-${index + 1}">
+                <td>Round ${index + 1}</td>
+                <td>${roundData.scoreplayer1}</td>
+                <td>${roundData.scoreplayer2}</td>
+                <td>${roundData.scoreplayer3}</td>
+                <td>${roundData.scoreplayer4}</td>
+            </tr>
+            `)
+        .join('');
+            document.getElementById('round-1').innerHTML = points;
+         }) 
+        .catch((err) => {
+            console.log(err);
+         });
+    </script>
+  </body>
+</html>
